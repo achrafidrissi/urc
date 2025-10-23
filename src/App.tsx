@@ -1,21 +1,51 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useAppSelector } from '@/app/hooks'
-import { selectIsAuthenticated } from '@/features/auth/authSelectors'
-import LoginPage from '@/features/auth/LoginPage'
-import HomePage from "@/features/auth/HomePage";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import PublicRoute from "@/components/PublicRoute";
+import LoginPage from "@/features/auth/LoginPage";
 import RegisterPage from "@/features/auth/RegisterPage";
-import UserList from "@/features/users/UserList";
+import ChatLayout from "@/features/chat/ChatLayout";
+import ChatPage from "@/features/chat/ChatPage";
 
 export default function App() {
-    const isAuth = useAppSelector(selectIsAuthenticated)
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Routes publiques - redirigent vers le chat si connecté */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <RegisterPage />
+            </PublicRoute>
+          }
+        />
 
-    return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/" element={<UserList />} />
-            </Routes>
-        </BrowserRouter>
-    )
+        {/* Routes protégées - redirigent vers login si non connecté */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <ChatLayout />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages/user/:userId"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
 }
