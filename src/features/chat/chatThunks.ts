@@ -13,7 +13,7 @@ export const sendMessageThunk = createAsyncThunk(
         id: response.messageId,
         content: messageData.content,
         sender: sessionStorage.getItem("username") || "Vous",
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toISOString(),
         isOwn: true,
         conversationId: `user_${messageData.recipientId}`,
       };
@@ -39,4 +39,3 @@ export const fetchMessagesThunk = createAsyncThunk(
     }
   }
 );
-

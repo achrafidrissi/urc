@@ -178,4 +178,10 @@ export const {
   chatFailure,
 } = chatSlice.actions;
 
+// Sélecteurs utiles pour le statut et les erreurs
+export const selectChatStatus = (state: { chat: ChatState }) => state.chat.status;
+
+export const selectChatError = (state: { chat: ChatState }) => state.chat.error;
+
+
 export default chatSlice.reducer;
