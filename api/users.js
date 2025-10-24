@@ -35,4 +35,4 @@ export default async function handler(request) {
             headers: {'content-type': 'application/json'},
         });
     }
-};
+}

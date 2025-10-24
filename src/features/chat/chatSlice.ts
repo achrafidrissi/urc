@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { sendMessageThunk, fetchMessagesThunk } from "./chatThunks";
 
 export interface Message {
   id: string;
@@ -39,7 +40,6 @@ export const selectCurrentConversation = (state: { chat: ChatState }) => {
   );
 };
 
-
 const chatSlice = createSlice({
   name: "chat",
   initialState,
@@ -48,29 +48,28 @@ const chatSlice = createSlice({
       state.currentConversationId = action.payload;
     },
     addMessage(state, action: PayloadAction<Message>) {
-  const message = action.payload;
-  const conversationId = message.conversationId; // Explicitly get conversationId
+      const message = action.payload;
+      const conversationId = message.conversationId;
 
-  const conversation = state.conversations.find(
-    (conv) => conv.id === conversationId
-  );
+      const conversation = state.conversations.find(
+        (conv) => conv.id === conversationId
+      );
 
-  if (conversation) {
-    conversation.messages.push(message);
-    conversation.lastMessage = message;
-  } else {
-    // Create a new conversation if it doesn't exist
-    const newConversation: Conversation = {
-      id: conversationId,
-      userId: conversationId.split("_")[1], // Format: user_123
-      username: message.sender,
-      messages: [message],
-      lastMessage: message,
-    };
-    state.conversations.push(newConversation);
-  }
-},
-
+      if (conversation) {
+        conversation.messages.push(message);
+        conversation.lastMessage = message;
+      } else {
+        // Create a new conversation if it doesn't exist
+        const newConversation: Conversation = {
+          id: conversationId,
+          userId: conversationId.split("_")[1], // Format: user_123
+          username: message.sender,
+          messages: [message],
+          lastMessage: message,
+        };
+        state.conversations.push(newConversation);
+      }
+    },
     loadMessages(
       state,
       action: PayloadAction<{ conversationId: string; messages: Message[] }>
@@ -83,6 +82,16 @@ const chatSlice = createSlice({
       if (conversation) {
         conversation.messages = messages;
         conversation.lastMessage = messages[messages.length - 1];
+      } else {
+        // Create conversation if it doesn't exist
+        const newConversation: Conversation = {
+          id: conversationId,
+          userId: conversationId.split("_")[1],
+          username: messages[0]?.sender || "Unknown",
+          messages: messages,
+          lastMessage: messages[messages.length - 1],
+        };
+        state.conversations.push(newConversation);
       }
     },
     chatLoading(state) {
@@ -95,6 +104,68 @@ const chatSlice = createSlice({
       state.status = "failed";
       state.error = action.payload;
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(sendMessageThunk.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(sendMessageThunk.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        const message = action.payload;
+        const conversationId = message.conversationId;
+
+        const conversation = state.conversations.find(
+          (conv) => conv.id === conversationId
+        );
+
+        if (conversation) {
+          conversation.messages.push(message);
+          conversation.lastMessage = message;
+        } else {
+          const newConversation: Conversation = {
+            id: conversationId,
+            userId: conversationId.split("_")[1],
+            username: message.sender,
+            messages: [message],
+            lastMessage: message,
+          };
+          state.conversations.push(newConversation);
+        }
+      })
+      .addCase(sendMessageThunk.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
+      })
+      .addCase(fetchMessagesThunk.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(fetchMessagesThunk.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        const { conversationId, messages } = action.payload;
+
+        const conversation = state.conversations.find(
+          (conv) => conv.id === conversationId
+        );
+
+        if (conversation) {
+          conversation.messages = messages;
+          conversation.lastMessage = messages[messages.length - 1];
+        } else {
+          const newConversation: Conversation = {
+            id: conversationId,
+            userId: conversationId.split("_")[1],
+            username: messages[0]?.sender || "Unknown",
+            messages: messages,
+            lastMessage: messages[messages.length - 1],
+          };
+          state.conversations.push(newConversation);
+        }
+      })
+      .addCase(fetchMessagesThunk.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
+      });
   },
 });
 

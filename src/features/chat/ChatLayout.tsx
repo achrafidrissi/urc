@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import {
@@ -8,10 +8,10 @@ import {
 } from "@/features/users/userSlice";
 import { selectAuthToken } from "@/features/auth/authSelectors";
 import {
-  addMessage,
   setCurrentConversation,
-  selectCurrentConversation,
+  selectCurrentConversation
 } from "@/features/chat/chatSlice";
+import { sendMessageThunk, fetchMessagesThunk } from "./chatThunks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ export default function ChatLayout() {
   const currentConversation = useAppSelector(selectCurrentConversation);
 
   const [message, setMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const currentUsername = sessionStorage.getItem("username");
 
@@ -38,11 +39,21 @@ export default function ChatLayout() {
   }, [dispatch, token]);
 
   useEffect(() => {
-    if (userId) {
-      const conversationId = `user_${userId}`;
+  if (userId) {
+    const conversationId = `user_${userId}`;
+    // 1️⃣ d'abord charger les messages
+    dispatch(fetchMessagesThunk(userId)).then(() => {
+      // 2️⃣ ensuite définir la conversation active
       dispatch(setCurrentConversation(conversationId));
-    }
-  }, [userId, dispatch]);
+    });
+  }
+}, [userId, dispatch]);
+
+
+  // Auto-scroll vers le bas quand de nouveaux messages arrivent
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [currentConversation?.messages]);
 
   const handleSelectUser = (selectedUserId: string) => {
     navigate(`/messages/user/${selectedUserId}`);
@@ -50,20 +61,13 @@ export default function ChatLayout() {
 
   const handleSendMessage = () => {
     if (message.trim() && userId) {
-      const conversationId = `user_${userId}`;
-      const newMessage = {
-        id: Date.now().toString(),
-        content: message.trim(),
-        sender: currentUsername || "Vous",
-        timestamp: new Date().toLocaleTimeString(),
-        isOwn: true,
-        conversationId,
-      };
-
-      dispatch(addMessage(newMessage));
+      dispatch(
+        sendMessageThunk({
+          content: message.trim(),
+          recipientId: userId,
+        })
+      );
       setMessage("");
-
-      // TODO: Envoyer le message via l'API
     }
   };
 
@@ -118,15 +122,15 @@ export default function ChatLayout() {
               {users
                 .filter((user) => user.username !== currentUsername)
                 .map((user) => (
-                  <div
-                    key={user.user_id}
-                    onClick={() => handleSelectUser(user.user_id)}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                      userId === user.user_id
-                        ? "bg-indigo-100 border border-indigo-200"
-                        : "hover:bg-gray-100"
-                    }`}
-                  >
+                  <button
+                      key={user.user_id}
+                      onClick={() => handleSelectUser(user.user_id)}
+                      className={`w-full text-left p-3 rounded-lg cursor-pointer transition-colors ${
+                        userId === user.user_id
+                          ? "bg-indigo-100 border border-indigo-200"
+                          : "hover:bg-gray-100"
+                      }`}
+                    >
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold">
                         {user.username.charAt(0).toUpperCase()}
@@ -140,7 +144,7 @@ export default function ChatLayout() {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
             </div>
           </div>
@@ -176,31 +180,34 @@ export default function ChatLayout() {
                   <p className="text-sm">Commencez la conversation !</p>
                 </div>
               ) : (
-                currentConversation.messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${
-                      msg.isOwn ? "justify-end" : "justify-start"
-                    }`}
-                  >
+                <>
+                  {currentConversation.messages.map((msg) => (
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        msg.isOwn
-                          ? "bg-indigo-600 text-white"
-                          : "bg-white border border-gray-200 text-gray-900"
+                      key={msg.id}
+                      className={`flex ${
+                        msg.isOwn ? "justify-end" : "justify-start"
                       }`}
                     >
-                      <p className="text-sm">{msg.content}</p>
-                      <p
-                        className={`text-xs mt-1 ${
-                          msg.isOwn ? "text-indigo-100" : "text-gray-500"
+                      <div
+                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                          msg.isOwn
+                            ? "bg-indigo-600 text-white"
+                            : "bg-white border border-gray-200 text-gray-900"
                         }`}
                       >
-                        {msg.timestamp}
-                      </p>
+                        <p className="text-sm">{msg.content}</p>
+                        <p
+                          className={`text-xs mt-1 ${
+                            msg.isOwn ? "text-indigo-100" : "text-gray-500"
+                          }`}
+                        >
+                          {msg.timestamp}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                  <div ref={messagesEndRef} />
+                </>
               )}
             </div>
 
