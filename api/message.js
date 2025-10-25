@@ -11,7 +11,7 @@ export async function getConnecterUser(request) {
   }
   console.log("checking " + token);
   const user = await redis.get(token);
-  console.log("Got user : " + user.username);
+  console.log("Got user : " + user.id);
   return user;
 }
 
@@ -29,6 +29,7 @@ export default async (request, response) => {
     }
 
     const messageData = await request.body;
+    console.log("All messagee", messageData);
 
     const { content, recipientId } = messageData;
 
@@ -40,14 +41,16 @@ export default async (request, response) => {
     }
 
     // Créer un ID de conversation qui fonctionne dans les deux sens
-    const conversationKey = [user.user_id, recipientId].sort().join("_");
-
+    console.log("Sender ID:", user.id);
+    console.log("Recipient ID:", recipientId);
+    const conversationKey = [user.id, recipientId].sort().join("_");
+    
     // Préparer le message à stocker
     const message = {
       id: Date.now().toString(),
       content,
       sender: user.username,
-      senderId: user.user_id,
+      senderId: user.id,
       recipientId,
       timestamp: new Date().toISOString(),
       conversationKey,

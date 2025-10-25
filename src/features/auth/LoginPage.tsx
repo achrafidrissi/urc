@@ -41,8 +41,11 @@ export default function LoginPage() {
       dispatch(authSuccess(data.token));
       // Sauvegarder le nom d'utilisateur pour l'affichage
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("username", username);
+        sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("username", data.username);
+        sessionStorage.setItem("user_id", data.id);
       }
+      dispatch(authSuccess(data.token));
       navigate("/");
     } catch (err: any) {
       dispatch(authFailure(err.message));
