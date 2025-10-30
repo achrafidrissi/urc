@@ -18,9 +18,14 @@ import { sendMessageThunk, fetchMessagesThunk } from "./chatThunks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, Send, Users, LogOut } from "lucide-react";
+import {
+  MessageCircle,
+  Send,
+  Users,
+  LogOut,
+  MessageSquare,
+} from "lucide-react";
 import { logout } from "@/features/auth/authSlice";
-
 
 export default function ChatLayout() {
   const dispatch = useAppDispatch();
@@ -55,9 +60,9 @@ export default function ChatLayout() {
     }
   }, [userId, dispatch]);
 
-    useEffect(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [currentConversation?.messages]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [currentConversation?.messages]);
   const handleSelectUser = (selectedUserId: string | number) => {
     navigate(`/messages/user/${String(selectedUserId)}`);
   };
@@ -100,14 +105,24 @@ export default function ChatLayout() {
             <MessageCircle className="w-6 h-6 text-indigo-600" />
             <h1 className="text-xl font-bold text-gray-900">Messages</h1>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <LogOut className="w-4 h-4" />
-          </Button>
+          <div className="flex space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/rooms")}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -277,5 +292,3 @@ export default function ChatLayout() {
     </div>
   );
 }
-
-

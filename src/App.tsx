@@ -5,6 +5,7 @@ import LoginPage from "@/features/auth/LoginPage";
 import RegisterPage from "@/features/auth/RegisterPage";
 import ChatLayout from "@/features/chat/ChatLayout";
 import ChatPage from "@/features/chat/ChatPage";
+import RoomsPage from "@/features/rooms/RoomsPage";
 
 export default function App() {
   return (
@@ -42,6 +43,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ChatPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rooms"
+          element={
+            <ProtectedRoute>
+              <RoomsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rooms/:roomId"
+          element={
+            <ProtectedRoute>
+              <RoomsPage />
             </ProtectedRoute>
           }
         />
